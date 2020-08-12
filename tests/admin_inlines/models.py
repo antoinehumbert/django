@@ -326,6 +326,36 @@ class CourseProxy2(Course):
         proxy = True
 
 
+# Models for #31867
+class Parent1(models.Model):
+    name = models.CharField(max_length=1)
+
+
+class Child1(models.Model):
+    name = models.CharField(max_length=1)
+    position = models.PositiveIntegerField()
+    parent = models.ForeignKey(Parent1, models.CASCADE)
+
+
+class Parent2(models.Model):
+    name = models.CharField(max_length=1)
+
+
+class Child2(models.Model):
+    name = models.CharField(max_length=1)
+    position = models.PositiveIntegerField()
+    parent = models.ForeignKey(Parent2, models.CASCADE)
+
+
+class Parent3(models.Model):
+    name = models.CharField(max_length=1)
+
+
+class Child3(models.Model):
+    name = models.CharField(max_length=1)
+    position = models.PositiveIntegerField()
+    parent = models.ForeignKey(Parent3, models.CASCADE)
+
 # Other models
 
 

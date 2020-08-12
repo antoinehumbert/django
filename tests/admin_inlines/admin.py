@@ -4,15 +4,16 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from .models import (
-    Author, BinaryTree, CapoFamiglia, Chapter, Child, ChildModel1, ChildModel2,
-    Class, Consigliere, Course, CourseProxy, CourseProxy1, CourseProxy2,
-    EditablePKBook, ExtraTerrestrial, Fashionista, FootNote, Holder, Holder2,
-    Holder3, Holder4, Holder5, Inner, Inner2, Inner3, Inner4Stacked,
-    Inner4Tabular, Inner5Stacked, Inner5Tabular, NonAutoPKBook,
-    NonAutoPKBookChild, Novel, NovelReadonlyChapter, OutfitItem,
-    ParentModelWithCustomPk, Person, Poll, Profile, ProfileCollection,
-    Question, ReadOnlyInline, ShoppingWeakness, Sighting, SomeChildModel,
-    SomeParentModel, SottoCapo, Teacher, Title, TitleCollection,
+    Author, BinaryTree, CapoFamiglia, Chapter, Child, Child1, Child2, Child3,
+    ChildModel1, ChildModel2, Class, Consigliere, Course, CourseProxy,
+    CourseProxy1, CourseProxy2, EditablePKBook, ExtraTerrestrial, Fashionista,
+    FootNote, Holder, Holder2, Holder3, Holder4, Holder5, Inner, Inner2,
+    Inner3, Inner4Stacked, Inner4Tabular, Inner5Stacked, Inner5Tabular,
+    NonAutoPKBook, NonAutoPKBookChild, Novel, NovelReadonlyChapter, OutfitItem,
+    Parent1, Parent2, Parent3, ParentModelWithCustomPk, Person, Poll, Profile,
+    ProfileCollection, Question, ReadOnlyInline, ShoppingWeakness, Sighting,
+    SomeChildModel, SomeParentModel, SottoCapo, Teacher, Title,
+    TitleCollection,
 )
 
 site = admin.AdminSite(name="admin")
@@ -342,6 +343,59 @@ class ClassAdminStackedVertical(admin.ModelAdmin):
     inlines = [ClassStackedVertical]
 
 
+# admin and form for #31867
+class Child1Form(forms.ModelForm):
+
+    class Meta:
+        fields = '__all__'
+        model = Child1
+        widgets = {
+            'position': forms.HiddenInput,
+        }
+
+    def _post_clean(self):
+        super()._post_clean()
+        if self.instance is not None and self.instance.position == 1:
+            self.add_error(None, ValidationError("A non-field error"))
+
+
+class Child1Inline(admin.TabularInline):
+    model = Child1
+    form = Child1Form
+
+
+class Child2Form(forms.ModelForm):
+
+    class Meta:
+        fields = '__all__'
+        model = Child2
+        widgets = {
+            'position': forms.HiddenInput,
+        }
+
+
+class Child2Inline(admin.StackedInline):
+    model = Child2
+    form = Child2Form
+    fields = (("name", "position"), )
+
+
+class Child3Form(forms.ModelForm):
+
+    class Meta:
+        fields = '__all__'
+        model = Child3
+        widgets = {
+            'position': forms.HiddenInput,
+        }
+
+
+class Child3Inline(admin.StackedInline):
+    model = Child3
+    form = Child3Form
+    fields = ("name", "position")
+
+
 site.register(TitleCollection, inlines=[TitleInline])
 # Test bug #12561 and #12778
 # only ModelAdmin media
@@ -373,3 +427,6 @@ site.register(Course, ClassAdminStackedHorizontal)
 site.register(CourseProxy, ClassAdminStackedVertical)
 site.register(CourseProxy1, ClassAdminTabularVertical)
 site.register(CourseProxy2, ClassAdminTabularHorizontal)
+site.register(Parent1, inlines=[Child1Inline])
+site.register(Parent2, inlines=[Child2Inline])
+site.register(Parent3, inlines=[Child3Inline])
