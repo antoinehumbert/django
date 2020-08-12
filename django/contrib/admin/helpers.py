@@ -158,7 +158,7 @@ class _AdminReadonlyFormField:
     """
     Looks like a field but will render raw text for field instead of a form input
     """
-    def __init__(self, form, field, admin_field, model_admin=None):
+    def __init__(self, form, field, model_admin=None):
         if callable(field):
             class_name = field.__name__ if field.__name__ != '<lambda>' else ''
         else:
@@ -184,14 +184,6 @@ class _AdminReadonlyFormField:
         self.help_text = help_text
         self.field = field
         self.is_hidden = is_hidden
-        self._admin_field = admin_field
-
-    def __str__(self):
-        result_repr = self._admin_field.contents()
-        attrs = {"class": "field-%(name)s" % {'name': self.name}}
-        if self.is_hidden:
-            attrs["class"] += " hidden"
-        return format_html('<div{}>{}</div>', flatatt(attrs), result_repr)
 
 
 class AdminReadonlyField:
@@ -199,7 +191,7 @@ class AdminReadonlyField:
         # Make self.field look a little bit like a field. This means that
         # {{ field.name }} must be a useful class name to identify the field.
         # For convenience, store other field-related data here too.
-        self.field = _AdminReadonlyFormField(form, field, self, model_admin)
+        self.field = _AdminReadonlyFormField(form, field, model_admin)
         self.form = form
         self.model_admin = model_admin
         self.is_first = is_first

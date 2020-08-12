@@ -221,8 +221,6 @@ class TestInline(TestDataMixin, TestCase):
         response = self.client.get(reverse('admin:admin_inlines_someparentmodel_change', args=(parent.pk,)))
         self.assertNotContains(response, '<th>Position')
         self.assertNotContains(response, '<td class="field-position">')
-        self.assertInHTML('<div class="field-position hidden">0</div>', response.rendered_content)
-        self.assertInHTML('<div class="field-position hidden">1</div>', response.rendered_content)
 
     def test_non_related_name_inline(self):
         """
