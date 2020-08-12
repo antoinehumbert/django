@@ -154,11 +154,11 @@ class AdminField:
         return mark_safe(self.field.errors.as_ul())
 
 
-class _AdminReadonlyFormField:
-    """
-    Looks like a field but will render raw text for field instead of a form input
-    """
-    def __init__(self, form, field, model_admin=None):
+class AdminReadonlyField:
+    def __init__(self, form, field, is_first, model_admin=None):
+        # Make self.field look a little bit like a field. This means that
+        # {{ field.name }} must be a useful class name to identify the field.
+        # For convenience, store other field-related data here too.
         if callable(field):
             class_name = field.__name__ if field.__name__ != '<lambda>' else ''
         else:
@@ -179,19 +179,13 @@ class _AdminReadonlyFormField:
         else:
             is_hidden = False
 
-        self.name = class_name
-        self.label = label
-        self.help_text = help_text
-        self.field = field
-        self.is_hidden = is_hidden
-
-
-class AdminReadonlyField:
-    def __init__(self, form, field, is_first, model_admin=None):
-        # Make self.field look a little bit like a field. This means that
-        # {{ field.name }} must be a useful class name to identify the field.
-        # For convenience, store other field-related data here too.
-        self.field = _AdminReadonlyFormField(form, field, model_admin)
+        self.field = {
+            'name': class_name,
+            'label': label,
+            'help_text': help_text,
+            'field': field,
+            'is_hidden': is_hidden,
+        }
         self.form = form
         self.model_admin = model_admin
         self.is_first = is_first
@@ -203,12 +197,12 @@ class AdminReadonlyField:
         attrs = {}
         if not self.is_first:
             attrs["class"] = "inline"
-        label = self.field.label
+        label = self.field['label']
         return format_html('<label{}>{}:</label>', flatatt(attrs), capfirst(label))
 
     def contents(self):
         from django.contrib.admin.templatetags.admin_list import _boolean_icon
-        field, obj, model_admin = self.field.field, self.form.instance, self.model_admin
+        field, obj, model_admin = self.field['field'], self.form.instance, self.model_admin
         try:
             f, attr, value = lookup_field(field, obj, model_admin)
         except (AttributeError, ValueError, ObjectDoesNotExist):
