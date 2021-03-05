@@ -4,16 +4,15 @@ from django.core.exceptions import ValidationError
 from django.db import models
 
 from .models import (
-    Author, BinaryTree, CapoFamiglia, Chapter, Child, Child1, Child2, Child3,
-    ChildModel1, ChildModel2, Class, Consigliere, Course, CourseProxy,
-    CourseProxy1, CourseProxy2, EditablePKBook, ExtraTerrestrial, Fashionista,
-    FootNote, Holder, Holder2, Holder3, Holder4, Holder5, Inner, Inner2,
-    Inner3, Inner4Stacked, Inner4Tabular, Inner5Stacked, Inner5Tabular,
-    NonAutoPKBook, NonAutoPKBookChild, Novel, NovelReadonlyChapter, OutfitItem,
-    Parent1, Parent2, Parent3, ParentModelWithCustomPk, Person, Poll, Profile,
-    ProfileCollection, Question, ReadOnlyInline, ShoppingWeakness, Sighting,
-    SomeChildModel, SomeParentModel, SottoCapo, Teacher, Title,
-    TitleCollection,
+    Author, BinaryTree, CapoFamiglia, Chapter, Child, ChildModel1, ChildModel2,
+    Class, Consigliere, Course, CourseProxy, CourseProxy1, CourseProxy2,
+    EditablePKBook, ExtraTerrestrial, Fashionista, FootNote, Holder, Holder2,
+    Holder3, Holder4, Holder5, Inner, Inner2, Inner3, Inner4Stacked,
+    Inner4Tabular, Inner5Stacked, Inner5Tabular, NonAutoPKBook,
+    NonAutoPKBookChild, Novel, NovelReadonlyChapter, OutfitItem,
+    ParentModelWithCustomPk, Person, Poll, Profile, ProfileCollection,
+    Question, ReadOnlyInline, ShoppingWeakness, Sighting, SomeChildModel,
+    SomeParentModel, SottoCapo, Teacher, Title, TitleCollection,
 )
 
 site = admin.AdminSite(name="admin")
@@ -344,14 +343,11 @@ class ClassAdminStackedVertical(admin.ModelAdmin):
 
 
 # admin and form for #31867
-class Child1Form(forms.ModelForm):
-
+class ChildWithHiddenFieldForm(forms.ModelForm):
     class Meta:
-        fields = '__all__'
-        model = Child1
-        widgets = {
-            'position': forms.HiddenInput,
-        }
+        fields = ['name', 'position', 'parent']
+        model = SomeChildModel
+        widgets = {'position': forms.HiddenInput}
 
     def _post_clean(self):
         super()._post_clean()
@@ -359,41 +355,21 @@ class Child1Form(forms.ModelForm):
             self.add_error(None, ValidationError("A non-field error"))
 
 
-class Child1Inline(admin.TabularInline):
-    model = Child1
-    form = Child1Form
+class ChildWithHiddenFieldTabularInline(admin.TabularInline):
+    model = SomeChildModel
+    form = ChildWithHiddenFieldForm
 
 
-class Child2Form(forms.ModelForm):
-
-    class Meta:
-        fields = '__all__'
-        model = Child2
-        widgets = {
-            'position': forms.HiddenInput,
-        }
+class ChildWithHiddenFieldInFieldsGroupStackedInline(admin.StackedInline):
+    model = SomeChildModel
+    form = ChildWithHiddenFieldForm
+    fields = [('name', 'position')]
 
 
-class Child2Inline(admin.StackedInline):
-    model = Child2
-    form = Child2Form
-    fields = (("name", "position"), )
-
-
-class Child3Form(forms.ModelForm):
-
-    class Meta:
-        fields = '__all__'
-        model = Child3
-        widgets = {
-            'position': forms.HiddenInput,
-        }
-
-
-class Child3Inline(admin.StackedInline):
-    model = Child3
-    form = Child3Form
-    fields = ("name", "position")
+class ChildWithHiddenFieldOnSingleLineStackedInline(admin.StackedInline):
+    model = SomeChildModel
+    form = ChildWithHiddenFieldForm
+    fields = ('name', 'position')
 
 
 site.register(TitleCollection, inlines=[TitleInline])
@@ -427,6 +403,11 @@ site.register(Course, ClassAdminStackedHorizontal)
 site.register(CourseProxy, ClassAdminStackedVertical)
 site.register(CourseProxy1, ClassAdminTabularVertical)
 site.register(CourseProxy2, ClassAdminTabularHorizontal)
-site.register(Parent1, inlines=[Child1Inline])
-site.register(Parent2, inlines=[Child2Inline])
-site.register(Parent3, inlines=[Child3Inline])
+
+# Used to test hidden fields in tabular and stacked inlines
+site2 = admin.AdminSite(name='tabular_inline_with_hidden_field_admin')
+site2.register(SomeParentModel, inlines=[ChildWithHiddenFieldTabularInline])
+site3 = admin.AdminSite(name='stacked_inline_with_hidden_field_in_group_admin')
+site3.register(SomeParentModel, inlines=[ChildWithHiddenFieldInFieldsGroupStackedInline])
+site4 = admin.AdminSite(name='stacked_inline_with_hidden_field_on_single_line_admin')
+site4.register(SomeParentModel, inlines=[ChildWithHiddenFieldOnSingleLineStackedInline])

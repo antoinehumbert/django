@@ -8,12 +8,11 @@ from django.urls import reverse
 
 from .admin import InnerInline, site as admin_site
 from .models import (
-    Author, BinaryTree, Book, Chapter, Child, Child1, Child2, Child3,
-    ChildModel1, ChildModel2, Fashionista, FootNote, Holder, Holder2, Holder3,
-    Holder4, Inner, Inner2, Inner3, Inner4Stacked, Inner4Tabular, Novel,
-    OutfitItem, Parent, Parent1, Parent2, Parent3, ParentModelWithCustomPk,
-    Person, Poll, Profile, ProfileCollection, Question, Sighting,
-    SomeChildModel, SomeParentModel, Teacher,
+    Author, BinaryTree, Book, Chapter, Child, ChildModel1, ChildModel2,
+    Fashionista, FootNote, Holder, Holder2, Holder3, Holder4, Inner, Inner2,
+    Inner3, Inner4Stacked, Inner4Tabular, Novel, OutfitItem, Parent,
+    ParentModelWithCustomPk, Person, Poll, Profile, ProfileCollection,
+    Question, Sighting, SomeChildModel, SomeParentModel, Teacher,
 )
 
 INLINE_CHANGELINK_HTML = 'class="inlinechangelink">Change</a>'
@@ -228,42 +227,49 @@ class TestInline(TestDataMixin, TestCase):
         )
 
     def test_tabular_inline_hidden_field_with_view_only_permissions(self):
-        """#31867 -- Make sure content of hidden field is not visible in tabular inline when user has view-only
-        permission"""
-        parent = Parent1.objects.create(name='a')
-        Child1.objects.create(name='b', position='0', parent=parent)
-        Child1.objects.create(name='c', position='1', parent=parent)
-        user = User.objects.create_user(username="user", password="pwd", is_staff=True)
-        parent1_ct = ContentType.objects.get_for_model(Parent1)
-        child1_ct = ContentType.objects.get_for_model(Child1)
-        permission = Permission.objects.get(codename='view_parent1', content_type=parent1_ct)
+        """Content of hidden field is not visible in tabular inline when user
+        has view-only permission."""
+        parent = SomeParentModel.objects.create(name='a')
+        SomeChildModel.objects.create(name='b', position='0', parent=parent)
+        SomeChildModel.objects.create(name='c', position='1', parent=parent)
+        user = User.objects.create_user(username='user', password='pwd', is_staff=True)
+        parent_ct = ContentType.objects.get_for_model(SomeParentModel)
+        child_ct = ContentType.objects.get_for_model(SomeChildModel)
+        permission = Permission.objects.get(codename='view_someparentmodel', content_type=parent_ct)
         user.user_permissions.add(permission)
-        permission = Permission.objects.get(codename='view_child1', content_type=child1_ct)
+        permission = Permission.objects.get(codename='view_somechildmodel', content_type=child_ct)
         user.user_permissions.add(permission)
-        self.client.login(username="user", password="pwd")
-        response = self.client.get(reverse('admin:admin_inlines_parent1_change', args=(parent.pk,)))
+        self.client.login(username='user', password='pwd')
+        response = self.client.get(
+            reverse('tabular_inline_with_hidden_field_admin:admin_inlines_someparentmodel_change', args=(parent.pk,))
+        )
         self.assertInHTML('<th class="column-position hidden">Position</th>', response.rendered_content)
         self.assertInHTML('<td class="field-position hidden"><p>0</p></td>', response.rendered_content)
         self.assertInHTML('<td class="field-position hidden"><p>1</p></td>', response.rendered_content)
 
     def test_stacked_inline_hidden_field_with_view_only_permissions(self):
-        """#31867 -- Make sure content of hidden field is not visible in stacked inline when user has view-only
-        permission"""
-        parent = Parent2.objects.create(name='a')
-        Child2.objects.create(name='b', position='0', parent=parent)
-        Child2.objects.create(name='c', position='1', parent=parent)
-        user = User.objects.create_user(username="user", password="pwd", is_staff=True)
-        parent2_ct = ContentType.objects.get_for_model(Parent2)
-        child2_ct = ContentType.objects.get_for_model(Child2)
-        permission = Permission.objects.get(codename='view_parent2', content_type=parent2_ct)
+        """Content of hidden field is not visible in stacked inline when user
+        has view-only permission."""
+        parent = SomeParentModel.objects.create(name='a')
+        SomeChildModel.objects.create(name='b', position='0', parent=parent)
+        SomeChildModel.objects.create(name='c', position='1', parent=parent)
+        user = User.objects.create_user(username='user', password='pwd', is_staff=True)
+        parent_ct = ContentType.objects.get_for_model(SomeParentModel)
+        child_ct = ContentType.objects.get_for_model(SomeChildModel)
+        permission = Permission.objects.get(codename='view_someparentmodel', content_type=parent_ct)
         user.user_permissions.add(permission)
-        permission = Permission.objects.get(codename='view_child2', content_type=child2_ct)
+        permission = Permission.objects.get(codename='view_somechildmodel', content_type=child_ct)
         user.user_permissions.add(permission)
-        self.client.login(username="user", password="pwd")
-        response = self.client.get(reverse('admin:admin_inlines_parent2_change', args=(parent.pk,)))
-        # Following test ensure that the whole line containing name + position fields is not hidden
+        self.client.login(username='user', password='pwd')
+        response = self.client.get(
+            reverse(
+                'stacked_inline_with_hidden_field_in_group_admin:admin_inlines_someparentmodel_change',
+                args=(parent.pk,)
+            )
+        )
+        # The whole line containing name + position fields is not hidden.
         self.assertContains(response, '<div class="form-row field-name field-position">')
-        # Following test ensure that the div containing the position field is hidden
+        # The div containing the position field is hidden.
         self.assertInHTML(
             '<div class="fieldBox field-position hidden"><label class="inline">Position:</label>'
             '<div class="readonly">0</div></div>',
@@ -276,58 +282,69 @@ class TestInline(TestDataMixin, TestCase):
         )
 
     def test_stacked_inline_single_hidden_field_in_line_with_view_only_permissions(self):
-        """#31867 -- Make sure content of hidden field is not visible in stacked inline when user has view-only
-        permission and field is the only field on one line"""
-        parent = Parent3.objects.create(name='a')
-        Child3.objects.create(name='b', position='0', parent=parent)
-        Child3.objects.create(name='c', position='1', parent=parent)
-        user = User.objects.create_user(username="user", password="pwd", is_staff=True)
-        parent3_ct = ContentType.objects.get_for_model(Parent3)
-        child3_ct = ContentType.objects.get_for_model(Child3)
-        permission = Permission.objects.get(codename='view_parent3', content_type=parent3_ct)
+        """Content of hidden field is not visible in stacked inline when user
+        has view-only permission and field is the only field on one line."""
+        parent = SomeParentModel.objects.create(name='a')
+        SomeChildModel.objects.create(name='b', position='0', parent=parent)
+        SomeChildModel.objects.create(name='c', position='1', parent=parent)
+        user = User.objects.create_user(username='user', password='pwd', is_staff=True)
+        parent_ct = ContentType.objects.get_for_model(SomeParentModel)
+        child_ct = ContentType.objects.get_for_model(SomeChildModel)
+        permission = Permission.objects.get(codename='view_someparentmodel', content_type=parent_ct)
         user.user_permissions.add(permission)
-        permission = Permission.objects.get(codename='view_child3', content_type=child3_ct)
+        permission = Permission.objects.get(codename='view_somechildmodel', content_type=child_ct)
         user.user_permissions.add(permission)
-        self.client.login(username="user", password="pwd")
-        response = self.client.get(reverse('admin:admin_inlines_parent3_change', args=(parent.pk,)))
-        # Following test ensure that the whole line containing position field is hidden
+        self.client.login(username='user', password='pwd')
+        response = self.client.get(
+            reverse(
+                'stacked_inline_with_hidden_field_on_single_line_admin:admin_inlines_someparentmodel_change',
+                args=(parent.pk,)
+            )
+        )
+        # The whole line containing position field is hidden.
         self.assertInHTML(
             '<div class="form-row hidden field-position"><div><label>Position:</label>'
             '<div class="readonly">0</div></div></div>',
-            response.rendered_content)
+            response.rendered_content
+        )
         self.assertInHTML(
             '<div class="form-row hidden field-position"><div><label>Position:</label>'
             '<div class="readonly">1</div></div></div>',
-            response.rendered_content)
+            response.rendered_content
+        )
 
     def test_tabular_inline_with_hidden_field_non_field_errors_has_correct_colspan(self):
-        """#31867 -- in tabuar inlines, when a form has non-field errors, those errors are rendered in a table line
-        with a single cell spanning the whole table width. Colspan must be equal to the number of visible columns """
-        parent = Parent1.objects.create(name='a')
-        child = Child1.objects.create(name='b', position='0', parent=parent)
+        """In tabular inlines, when a form has non-field errors, those errors
+        are rendered in a table line with a single cell spanning the whole
+        table width. Colspan must be equal to the number of visible columns."""
+        parent = SomeParentModel.objects.create(name='a')
+        child = SomeChildModel.objects.create(name='b', position='0', parent=parent)
 
-        change_url = reverse('admin:admin_inlines_parent1_change', args=(parent.id,))
-        response = self.client.get(change_url)
+        change_url = reverse(
+            'tabular_inline_with_hidden_field_admin:admin_inlines_someparentmodel_change',
+            args=(parent.id,)
+        )
+        _ = self.client.get(change_url)
         data = {
             'name': parent.name,
-            'child1_set-TOTAL_FORMS': 1,
-            'child1_set-INITIAL_FORMS': 1,
-            'child1_set-MIN_NUM_FORMS': 0,
-            'child1_set-MAX_NUM_FORMS': 1000,
+            'somechildmodel_set-TOTAL_FORMS': 1,
+            'somechildmodel_set-INITIAL_FORMS': 1,
+            'somechildmodel_set-MIN_NUM_FORMS': 0,
+            'somechildmodel_set-MAX_NUM_FORMS': 1000,
             '_save': 'Save',
-            'child1_set-0-id': child.id,
-            'child1_set-0-parent': parent.id,
-            'child1_set-0-name': child.name,
-            'child1_set-0-position': 1,
+            'somechildmodel_set-0-id': child.id,
+            'somechildmodel_set-0-parent': parent.id,
+            'somechildmodel_set-0-name': child.name,
+            'somechildmodel_set-0-position': 1,
         }
         response = self.client.post(change_url, data)
-        # Form has 3 visible columns and 1 hidden column
+        # Form has 3 visible columns and 1 hidden column.
         self.assertInHTML(
             '<thead><tr><th class="original"></th><th class="column-name required">Name</th>'
             '<th class="column-position required hidden">Position</th><th>Delete?</th></tr></thead>',
             response.rendered_content
         )
-        # The non-field error must be spanned on 3 (visible) columns
+        # The non-field error must be spanned on 3 (visible) columns.
         self.assertInHTML(
             '<tr class="row-form-errors"><td colspan="3"><ul class="errorlist nonfield">'
             '<li>A non-field error</li></ul></td></tr>',
